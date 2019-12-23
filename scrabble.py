@@ -1,31 +1,93 @@
-# 6.0001 Problem Set 3
-#
-# The 6.0001 Word Game
-# Created by: Kevin Luu <luuk> and Jenna Wiens <jwiens>
-#
-# Name          : <your name>
-# Collaborators : <your collaborators>
-# Time spent    : <total time>
+"""
+A Python implementation of the famous board game: Scrabble.
+"""
 
 import math
 import random
 import string
 
-VOWELS = 'aeiou'
-CONSONANTS = 'bcdfghjklmnpqrstvwxyz'
 HAND_SIZE = 7
 
 SCRABBLE_LETTER_VALUES = {
-    'a': 1, 'b': 3, 'c': 3, 'd': 2, 'e': 1, 'f': 4, 'g': 2, 'h': 4, 'i': 1, 'j': 8, 'k': 5, 'l': 1, 'm': 3, 'n': 1,
-    'o': 1, 'p': 3, 'q': 10, 'r': 1, 's': 1, 't': 1, 'u': 1, 'v': 4, 'w': 4, 'x': 8, 'y': 4, 'z': 10, '*': 0
+    "A": 1,
+    "B": 3,
+    "C": 3,
+    "D": 2,
+    "E": 1,
+    "F": 4,
+    "G": 2,
+    "H": 4,
+    "I": 1,
+    "J": 8,
+    "K": 5,
+    "L": 1,
+    "M": 3,
+    "N": 1,
+    "O": 1,
+    "P": 3,
+    "Q": 10,
+    "R": 1,
+    "S": 1,
+    "T": 1,
+    "U": 1,
+    "V": 4,
+    "W": 4,
+    "X": 8,
+    "Y": 4,
+    "Z": 10,
+    "*": 0,
 }
-
-# -----------------------------------
-# Helper code
-# (you don't need to understand this helper code)
 
 WORDLIST_FILENAME = "words.txt"
 
+
+class BagOfTiles:
+    def __init__(self):
+        tiles_values = list(string.ascii_uppercase + "*")
+        tiles_freq = [9, 2, 2, 4, 12, 2, 3, 2, 9, 9, 1, 4, 2,  # A -> M
+                      6, 8, 2, 1, 6, 4, 6, 4, 2, 2, 1, 2, 1,  # N -> Z
+                      2]  # Joker
+        self.tiles = [value
+                      for value, freq in zip(tiles_values, tiles_freq)
+                      for _ in range(freq)]
+        self.empty = False
+        self.shuffle()
+
+    def shuffle(self):
+        random.shuffle(self.tiles)
+
+    def get_tiles(self, x):
+        t = []
+        try:
+            for _ in range(x):
+                t.append(self.get_tile())
+        except StopIteration:
+            print("Bag is empty and doesn't contain anymore tiles!")
+        finally:
+            return t
+
+    def get_tile(self):
+        if not self.empty:
+            t = self.tiles.pop()
+            self.empty = False if self.tiles else True
+            return t
+        else:
+            self.empty = True
+            raise StopIteration
+
+    def replace_tiles(self, tiles_to_replace):
+        assert not self.empty, 'The bag is empty'
+        assert len(tiles_to_replace) < len(self.tiles), \
+            'There are not that many tiles left in the bag. \n' \
+            'Number of tiles in the bag: {}'.format(len(self.tiles))
+
+        new_tiles = self.get_tiles(len(tiles_to_replace))
+        self.tiles.extend(tiles_to_replace)
+        self.shuffle()
+        return new_tiles
+
+    def show(self):
+        print(self.tiles)
 
 def load_words():
     """
@@ -37,7 +99,7 @@ def load_words():
 
     print("Loading word list from file...")
     # inFile: file
-    inFile = open(WORDLIST_FILENAME, 'r')
+    inFile = open(WORDLIST_FILENAME, "r")
     # wordlist: list of strings
     wordlist = []
     for line in inFile:
@@ -99,7 +161,7 @@ def get_word_score(word, n):
     word = word.lower()
     for letter in word:
         score += SCRABBLE_LETTER_VALUES[letter]
-    score *= max(1, (7*len(word) - 3*(n-len(word))))
+    score *= max(1, (7 * len(word) - 3 * (n - len(word))))
     return score
 
 
@@ -121,7 +183,7 @@ def display_hand(hand):
 
     for letter in hand.keys():
         for j in range(hand[letter]):
-            print(letter, end=' ')  # print all on the same line
+            print(letter, end=" ")  # print all on the same line
     print()  # print an empty line
 
 
@@ -146,7 +208,7 @@ def deal_hand(n):
     hand = {}
     num_vowels = int(math.ceil(n / 3))
 
-    for i in range(num_vowels-1):
+    for i in range(num_vowels - 1):
         x = random.choice(VOWELS)
         hand[x] = hand.get(x, 0) + 1
 
@@ -155,7 +217,7 @@ def deal_hand(n):
         hand[x] = hand.get(x, 0) + 1
 
     if n > 0:
-        hand['*'] = 1
+        hand["*"] = 1
 
     return hand
 
@@ -189,6 +251,7 @@ def update_hand(hand, word):
             new_hand[letter] -= 1
     return new_hand
 
+
 #
 # Problem #3: Test word validity
 #
@@ -209,14 +272,14 @@ def is_valid_word(word, hand, word_list):
     for letter in dic_word.keys():
         if dic_word[letter] > hand.get(letter, 0):
             return False
-    if word.find('*') == -1:
+    if word.find("*") == -1:
         for validword in word_list:
             if word == validword:
                 return True
     else:
         for validword in word_list:
             for vowel in VOWELS:
-                if word.replace('*', vowel) == validword:
+                if word.replace("*", vowel) == validword:
                     return True
     return False
 
@@ -271,31 +334,40 @@ def play_hand(hand, word_list):
     hand_score = 0
 
     while calculate_handlen(hand) > 0:
-        print('Current hand: '), display_hand(hand)
+        print("Current hand: "), display_hand(hand)
         user_input = input('Enter word, or "!!" to indicate that you are finished: ')
-        if user_input == '!!':
+        if user_input == "!!":
             break
         elif is_valid_word(user_input, hand, word_list):
             hand_score += get_word_score(user_input, HAND_SIZE)
-            print('"', user_input, '" earned ', get_word_score(user_input, HAND_SIZE), ' points. Total: ', hand_score)
+            print(
+                '"',
+                user_input,
+                '" earned ',
+                get_word_score(user_input, HAND_SIZE),
+                " points. Total: ",
+                hand_score,
+            )
             hand = update_hand(hand, user_input)
         else:
-            print('This is not a valid word. Please choose another word.')
+            print("This is not a valid word. Please choose another word.")
 
-    print('Total score for this hand: ', hand_score)
+    print("Total score for this hand: ", hand_score)
 
     return hand_score
 
-    print('--------------')
+    print("--------------")
+
 
 #
 # Problem #6: Playing a game
-# 
+#
 
 
 #
 # procedure you will use to substitute a letter in a hand
 #
+
 
 def substitute_hand(hand, letter):
     """ 
@@ -322,9 +394,9 @@ def substitute_hand(hand, letter):
 
     new_hand = hand
     if hand.get(letter, 0) != 0:
-        list_letter = VOWELS+CONSONANTS
+        list_letter = VOWELS + CONSONANTS
         for key in hand.keys():
-            list_letter = list_letter.replace(key, '')
+            list_letter = list_letter.replace(key, "")
         new_letter = random.choice(list_letter)
         new_hand[new_letter] = hand[letter]
         del new_hand[letter]
@@ -363,33 +435,32 @@ def play_game(word_list):
     """
 
     total_score = 0
-    nbr_hand = int(input('Enter a number of hands: '))
+    nbr_hand = int(input("Enter a number of hands: "))
     while nbr_hand > 0:
         hand = deal_hand(HAND_SIZE)
         display_hand(hand)
-        substitute = input('Would you like to substitute a letter? ')
-        if substitute.lower() == 'yes':
-            letter = input('Which letter would you like to replace? ')
+        substitute = input("Would you like to substitute a letter? ")
+        if substitute.lower() == "yes":
+            letter = input("Which letter would you like to replace? ")
             if len(letter) == 1:
                 substitute_hand(hand, letter.lower())
             else:
-                print('Not a valid input')
-        elif substitute.lower() != 'no':
-            print('Not a valid input')
+                print("Not a valid input")
+        elif substitute.lower() != "no":
+            print("Not a valid input")
 
         total_score += play_hand(hand, word_list)
         nbr_hand -= 1
 
-    print('Total score over all hands: ', total_score)
+    print("Total score over all hands: ", total_score)
 
 
-
-
-#
-# Build data structures used for entire session and play game
-# Do not remove the "if __name__ == '__main__':" line - this code is executed
-# when the program is run directly, instead of through an import statement
-#
-if __name__ == '__main__':
-    word_list = load_words()
-    play_game(word_list)
+bol = BagOfTiles()
+bol.show()
+for _ in range(100):
+    bol.get_tile()
+bol.show()
+print(bol.get_tiles(4))
+bol.show()
+bol.replace_tiles(['X', 'X', 'X'])
+bol.show()
